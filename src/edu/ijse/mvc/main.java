@@ -4,6 +4,8 @@
  */
 package edu.ijse.mvc;
 
+import edu.ijse.mvc.view.ItemView;
+
 /**
  *
  * @author Lenovo
@@ -14,7 +16,7 @@ public class main {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        System.err.println("Hello");
+        new ItemView().setVisible(true);
     }
     
 }

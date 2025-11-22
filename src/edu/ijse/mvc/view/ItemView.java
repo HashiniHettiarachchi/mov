@@ -4,6 +4,12 @@
  */
 package edu.ijse.mvc.view;
 
+import edu.ijse.mvc.controller.ItemController;
+import edu.ijse.mvc.dto.ItemDto;
+import java.util.ArrayList;
+import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
+
 /**
  *
  * @author Lenovo
@@ -11,12 +17,15 @@ package edu.ijse.mvc.view;
 public class ItemView extends javax.swing.JFrame {
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(ItemView.class.getName());
+    
+    private ItemController itemController = new ItemController();
 
     /**
      * Creates new form ItemView
      */
     public ItemView() {
         initComponents();
+        loadTable();
     }
 
     /**
@@ -42,7 +51,7 @@ public class ItemView extends javax.swing.JFrame {
         btnSave = new javax.swing.JButton();
         btnDelete = new javax.swing.JButton();
         btnUpdate = new javax.swing.JButton();
-        jScrollPane1 = new javax.swing.JScrollPane();
+        tblItem = new javax.swing.JScrollPane();
         jTable1 = new javax.swing.JTable();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
@@ -102,7 +111,7 @@ public class ItemView extends javax.swing.JFrame {
                 "Title 1", "Title 2", "Title 3", "Title 4"
             }
         ));
-        jScrollPane1.setViewportView(jTable1);
+        tblItem.setViewportView(jTable1);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -142,7 +151,7 @@ public class ItemView extends javax.swing.JFrame {
                     .addComponent(textQoh, javax.swing.GroupLayout.PREFERRED_SIZE, 115, javax.swing.GroupLayout.PREFERRED_SIZE)))
             .addGroup(layout.createSequentialGroup()
                 .addGap(42, 42, 42)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 625, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(tblItem, javax.swing.GroupLayout.PREFERRED_SIZE, 625, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(0, 0, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
@@ -174,7 +183,7 @@ public class ItemView extends javax.swing.JFrame {
                     .addComponent(btnDelete)
                     .addComponent(btnUpdate))
                 .addGap(18, 18, 18)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 153, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(tblItem, javax.swing.GroupLayout.PREFERRED_SIZE, 153, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(280, 280, 280))
         );
 
@@ -182,9 +191,11 @@ public class ItemView extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void textPriceActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_textPriceActionPerformed
-        // TODO add your handling code here:
+         saveItem();
     }//GEN-LAST:event_textPriceActionPerformed
-
+private void tblItemMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblItemMouseClicked
+        searchItem();
+    }
     /**
      * @param args the command line arguments
      */
@@ -194,7 +205,6 @@ public class ItemView extends javax.swing.JFrame {
     private javax.swing.JButton btnDelete;
     private javax.swing.JButton btnSave;
     private javax.swing.JButton btnUpdate;
-    private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTable jTable1;
     private javax.swing.JLabel lblCode;
     private javax.swing.JLabel lblDesc;
@@ -202,10 +212,90 @@ public class ItemView extends javax.swing.JFrame {
     private javax.swing.JLabel lblPack;
     private javax.swing.JLabel lblPrice;
     private javax.swing.JLabel lblQoh;
+    private javax.swing.JScrollPane tblItem;
     private javax.swing.JTextField textCode;
     private javax.swing.JTextField textDesc;
     private javax.swing.JTextField textPack;
     private javax.swing.JTextField textPrice;
     private javax.swing.JTextField textQoh;
     // End of variables declaration//GEN-END:variables
+
+public void loadTable(){
+    String columns[] = {"Item Code", "Description", "Pack Size", "Unit Price", "Qty On Hand"};
+    DefaultTableModel dtm = new DefaultTableModel(columns, 0) {
+        public boolean isCellEditable(int row, int column) {
+            return false;
+        }
+    };
+
+    jTable1.setModel(dtm); // ✔ FIXED
+
+    try {
+        ArrayList<ItemDto> itemDtos = itemController.getAll();
+        for (ItemDto itemDto : itemDtos) {
+            Object[] rowData = {
+                itemDto.getCode(),
+                itemDto.getDesc(),
+                itemDto.getPack(),
+                itemDto.getPrice(),
+                itemDto.getQoh()
+            };
+
+            dtm.addRow(rowData);
+        }
+    } catch (Exception e) {
+        JOptionPane.showMessageDialog(this, e.getMessage());
+    }
+}
+
+    
+    public void saveItem(){
+        ItemDto itemDto = new ItemDto(textCode.getText(),
+                textDesc.getText(), textPack.getText(), 
+                Double.parseDouble(textPrice.getText()), Integer.parseInt(textQoh.getText()));
+        try {
+            String resp = itemController.saveItem(itemDto);
+            JOptionPane.showMessageDialog(this, resp);
+            loadTable();
+            clearForm();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, e.getMessage());
+        }
+        
+    }
+
+    private void clearForm() {
+        textCode.setText("");
+        textDesc.setText("");
+        textPack.setText("");
+        textPrice.setText("");
+        textQoh.setText("");
+    }
+
+    private void searchItem() {
+    int row = jTable1.getSelectedRow();
+
+    if (row == -1) {
+        return; // nothing selected
+    }
+
+    String itemCode = jTable1.getValueAt(row, 0).toString();
+
+    try {
+        ItemDto itemDto = itemController.searchItem(itemCode);
+        if(itemDto != null){
+            textCode.setText(itemDto.getCode());
+            textDesc.setText(itemDto.getDesc());
+            textPack.setText(itemDto.getPack());
+            textPrice.setText(Double.toString(itemDto.getPrice()));
+            textQoh.setText(Integer.toString(itemDto.getQoh()));
+        } else {
+            JOptionPane.showMessageDialog(this, "Item Not Found");
+        }
+    } catch (Exception e) {
+        JOptionPane.showMessageDialog(this, e.getMessage());
+    }
+}
+
+
 }
